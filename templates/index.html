@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gemini Toplu Görsel Üretici</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-badge">✨</span>
+        <div>
+          <h1>Gemini Toplu Görsel Üretici</h1>
+          <p>Excel listesi + referans görsellerden, prompt'a uygun toplu görseller üretin.</p>
+        </div>
+      </div>
+      <button id="settingsToggle" class="ghost-btn" type="button">⚙️ API Ayarları</button>
+    </header>
+
+    <section id="settingsPanel" class="panel settings-panel hidden">
+      <h2>Gemini API Anahtarı</h2>
+      <p class="hint">
+        {% if has_env_key %}
+          <span class="badge badge-success">.env dosyasından bir GEMINI_API_KEY algılandı.</span>
+          İstersen aşağıya farklı bir anahtar girip geçici olarak değiştirebilirsin.
+        {% else %}
+          <span class="badge badge-warning">Henüz bir API anahtarı tanımlı değil.</span>
+          Görsel üretebilmek için Gemini API anahtarını gir.
+        {% endif %}
+      </p>
+      <div class="row">
+        <input id="apiKeyInput" type="password" placeholder="AIza..." autocomplete="off" />
+        <button id="saveApiKeyBtn" class="primary-btn" type="button">Kaydet</button>
+      </div>
+      <p class="hint">Anahtar yalnızca sunucu belleğinde tutulur, diske yazılmaz.</p>
+    </section>
+
+    <main class="steps">
+      <!-- STEP 1: EXCEL -->
+      <section class="panel step-panel">
+        <div class="step-title"><span class="step-num">1</span><h2>Excel Listesini Yükle</h2></div>
+        <p class="hint">Görsellerle eşleştirilecek bir sütun (ör. Ürün Adı / Kod) içeren .xlsx, .xls veya .csv dosyası yükle.</p>
+        <div class="row">
+          <input id="excelInput" type="file" accept=".xlsx,.xls,.csv" />
+          <button id="excelUploadBtn" class="primary-btn" type="button">Excel'i Yükle</button>
+        </div>
+        <div id="excelResult" class="result-area hidden">
+          <div class="table-wrap">
+            <table id="excelPreviewTable"></table>
+          </div>
+          <div class="row">
+            <label for="keyColumnSelect">Görsel dosya adıyla eşleşecek sütun:</label>
+            <select id="keyColumnSelect"></select>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: IMAGES -->
+      <section class="panel step-panel">
+        <div class="step-title"><span class="step-num">2</span><h2>Referans Görselleri Yükle</h2></div>
+        <p class="hint">Dosya adları (uzantısız), yukarıda seçtiğin excel sütunundaki değerlerle eşleşmelidir. Örn: "Kirmizi Sandalye.jpg" ↔ satırdaki "Kirmizi Sandalye".</p>
+        <div class="row">
+          <input id="imagesInput" type="file" accept="image/*" multiple />
+          <button id="imagesUploadBtn" class="primary-btn" type="button">Görselleri Yükle</button>
+        </div>
+        <div id="imagesResult" class="chips hidden"></div>
+      </section>
+
+      <!-- STEP 3: PROMPT -->
+      <section class="panel step-panel">
+        <div class="step-title"><span class="step-num">3</span><h2>Prompt Şablonu ve Grup Ayarları</h2></div>
+        <p class="hint">Excel sütunlarını yer tutucu olarak kullanabilirsin. Örneğin: <code>{Ürün Adı} ürününün stüdyo ışığında, beyaz fonda profesyonel bir ürün fotoğrafı</code></p>
+        <div id="placeholderChips" class="chips"></div>
+        <textarea id="promptTemplate" rows="4" placeholder="Prompt şablonunu buraya yaz..."></textarea>
+        <div class="row">
+          <label for="folderNameInput">İndirilecek klasör / zip adı:</label>
+          <input id="folderNameInput" type="text" placeholder="gorseller" />
+        </div>
+        <button id="createBatchBtn" class="primary-btn wide" type="button">Grubu Oluştur</button>
+      </section>
+
+      <!-- RESULTS -->
+      <section id="resultsPanel" class="panel step-panel hidden">
+        <div class="step-title"><span class="step-num">4</span><h2>Üretilen Görseller</h2></div>
+        <div class="results-toolbar">
+          <div class="progress-wrap">
+            <div id="progressBar" class="progress-bar"><div class="progress-fill"></div></div>
+            <span id="progressLabel">0 / 0 tamamlandı</span>
+          </div>
+          <div class="toolbar-actions">
+            <button id="generateAllBtn" class="primary-btn" type="button">Tümünü Üret</button>
+            <button id="stopBtn" class="ghost-btn hidden" type="button">Durdur</button>
+            <button id="downloadAllBtn" class="success-btn" type="button">📦 Tümünü ZIP indir</button>
+          </div>
+        </div>
+        <div id="unmatchedWarning" class="banner banner-warning hidden"></div>
+        <div id="itemsGrid" class="items-grid"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
